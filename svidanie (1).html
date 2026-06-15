@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Свидание с Александром</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --clr-bg:      #ffffff;
+    --clr-surface: #fff5f7;
+    --clr-btn:     #ffc0cb;
+    --clr-hover:   #f28fa3;
+    --clr-border:  #800020;
+    --clr-text:    #800020;
+    --clr-soft:    #a04060;
+    --clr-dark:    #120508;
+    --font-d: "Cormorant Garamond", Georgia, serif;
+    --font-b: "Lato", "Helvetica Neue", sans-serif;
+    --sh: 0 6px 36px rgba(128,0,32,0.12), 0 1px 4px rgba(128,0,32,0.07);
+    --tr: 220ms cubic-bezier(0.16,1,0.3,1);
+  }
+  *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+  html { -webkit-font-smoothing:antialiased; }
+  body {
+    min-height:100dvh; font-family:var(--font-b);
+    color:var(--clr-text); background:var(--clr-bg); overflow:hidden;
+  }
+  body::before {
+    content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
+    background:
+      radial-gradient(ellipse at 10% 10%, rgba(255,192,203,.25) 0%, transparent 52%),
+      radial-gradient(ellipse at 90% 88%, rgba(255,192,203,.18) 0%, transparent 50%);
+  }
+
+  /* ── SCREENS ── */
+  .screen {
+    position:fixed; inset:0; z-index:1;
+    display:flex; align-items:center; justify-content:center;
+    padding:2rem 1.5rem;
+    opacity:0; pointer-events:none;
+    transform:translateY(24px);
+    transition: opacity 420ms cubic-bezier(0.16,1,0.3,1),
+                transform 420ms cubic-bezier(0.16,1,0.3,1);
+  }
+  .screen.active { opacity:1; pointer-events:all; transform:translateY(0); }
+  .screen.exit   { opacity:0; transform:translateY(-24px); pointer-events:none; }
+
+  /* ── CARD ── */
+  .card {
+    background:var(--clr-surface);
+    border:1.5px solid rgba(128,0,32,.22);
+    border-radius:2.4rem;
+    box-shadow:var(--sh);
+    padding:clamp(2rem,4vw,3.5rem) clamp(1.8rem,4vw,3rem);
+    width:100%; max-width:620px;
+    text-align:center;
+  }
+  .deco { font-size:clamp(2rem,4vw,3rem); display:block; margin-bottom:.8rem;
+          animation:pulse 2.4s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.1)} }
+  .dots { display:flex; gap:.5rem; justify-content:center; margin-bottom:1.8rem; }
+  .dot  { width:9px; height:9px; border-radius:999px; background:rgba(128,0,32,.18);
+          transition:background 300ms, transform 300ms; }
+  .dot.active { background:var(--clr-border); transform:scale(1.35); }
+  .dot.done   { background:rgba(128,0,32,.45); }
+  .title {
+    font-family:var(--font-d);
+    font-size:clamp(1.6rem,3.5vw,2.6rem);
+    font-weight:600; color:var(--clr-text); line-height:1.25; margin-bottom:.4rem;
+  }
+  .sub { font-size:clamp(.88rem,1.5vw,1rem); color:var(--clr-soft);
+         font-style:italic; margin-bottom:1.8rem; }
+
+  /* ── BUTTONS ── */
+  .grp { display:flex; gap:.9rem; flex-wrap:wrap; justify-content:center; margin-top:1.8rem; }
+  .btn {
+    font-family:var(--font-b); font-size:clamp(.9rem,1.6vw,1.05rem); font-weight:700;
+    color:var(--clr-text); background:var(--clr-btn);
+    border:2px solid var(--clr-border); border-radius:999px;
+    padding:.75rem 2.2rem; min-width:140px; cursor:pointer;
+    box-shadow:0 2px 12px rgba(128,0,32,.14);
+    transition:background var(--tr), box-shadow var(--tr), transform 140ms ease;
+    letter-spacing:.02em;
+  }
+  .btn:hover  { background:var(--clr-hover); box-shadow:0 4px 20px rgba(128,0,32,.26); transform:translateY(-2px); }
+  .btn:active { transform:translateY(0); }
+  .btn-opt { width:100%; border-radius:1.2rem; padding:.85rem 1.4rem; min-width:unset;
+             font-size:clamp(.88rem,1.5vw,1rem); }
+
+  /* ── POPUP ── */
+  .pop-ov {
+    position:fixed; inset:0; z-index:50;
+    display:flex; align-items:center; justify-content:center; padding:1.5rem;
+    background:rgba(128,0,32,.16); backdrop-filter:blur(6px);
+    opacity:0; pointer-events:none; transition:opacity 320ms ease;
+  }
+  .pop-ov.show { opacity:1; pointer-events:all; }
+  .pop-box {
+    background:#fff; border:2px solid var(--clr-border); border-radius:2.2rem;
+    box-shadow:0 8px 50px rgba(128,0,32,.22);
+    padding:clamp(1.8rem,3vw,2.8rem) clamp(1.4rem,3vw,2.4rem);
+    max-width:430px; width:100%; text-align:center;
+    transform:scale(.86) translateY(20px);
+    transition:transform 380ms cubic-bezier(.34,1.56,.64,1);
+  }
+  .pop-ov.show .pop-box { transform:scale(1) translateY(0); }
+  .pop-box .title { margin-bottom:.6rem; }
+  .pop-box p { font-size:.9rem; color:var(--clr-soft); font-style:italic; margin-bottom:1.4rem; }
+
+  /* ── EMOJI ── */
+  .emoji-big { font-size:4.5rem; display:block; margin:1.3rem 0 .7rem;
+               animation:pop .45s cubic-bezier(.34,1.56,.64,1); }
+  @keyframes pop { 0%{transform:scale(.3);opacity:0} 100%{transform:scale(1);opacity:1} }
+
+  /* ── FLOATING CHAT BUBBLE (поверх s6) ── */
+  #chat-float {
+    position:fixed;
+    bottom:2.2rem; right:2.2rem;
+    z-index:20;
+    max-width:300px;
+    transform:translateX(160px) translateY(20px);
+    opacity:0;
+    transition: transform 560ms cubic-bezier(.16,1,.3,1),
+                opacity 460ms ease;
+    pointer-events:none;
+  }
+  #chat-float.show {
+    transform:translateX(0) translateY(0);
+    opacity:1;
+    pointer-events:all;
+  }
+  /* исчезновение */
+  #chat-float.hide {
+    transform:translateX(160px) translateY(20px);
+    opacity:0;
+    pointer-events:none;
+  }
+
+  .chat-bubble {
+    background:var(--clr-btn);
+    border:2px solid var(--clr-border);
+    border-radius:1.5rem 1.5rem .35rem 1.5rem;
+    padding:1.3rem 1.6rem 1rem;
+    box-shadow:var(--sh);
+  }
+  .chat-txt {
+    font-family:var(--font-d);
+    font-size:clamp(1.1rem,2vw,1.35rem);
+    font-weight:600; color:var(--clr-text); line-height:1.35; margin-bottom:.5rem;
+  }
+  .chat-nick { font-size:.84rem; color:var(--clr-soft); font-style:italic; text-align:right; }
+
+  /* таймер-полоска */
+  .chat-timer { height:3px; background:rgba(128,0,32,.15); border-radius:999px;
+                margin-top:.75rem; overflow:hidden; }
+  .chat-timer-bar { height:100%; background:var(--clr-border); border-radius:999px; width:100%;
+                    transition:width 10s linear; }
+  .chat-timer-bar.run { width:0%; }
+
+  /* ── DARK / FINAL / THANKS ── */
+  .dark-ov { position:fixed; inset:0; background:var(--clr-dark); z-index:100;
+             opacity:0; pointer-events:none; transition:opacity 600ms ease; }
+  .dark-ov.show { opacity:1; pointer-events:all; }
+
+  .final-wrap { text-align:center; padding:3.5rem 2rem; }
+  .final-title {
+    font-family:var(--font-d); font-size:clamp(1.9rem,5vw,3.2rem);
+    font-weight:600; color:var(--clr-text); line-height:1.22; margin-bottom:1.2rem;
+    animation:fadeUp .9s ease both;
+  }
+  .final-hearts { font-size:2.4rem; letter-spacing:.35em; animation:fadeUp .9s .35s ease both; }
+  .thanks-txt {
+    font-family:var(--font-d); font-size:clamp(1.7rem,5vw,2.8rem);
+    font-weight:500; color:var(--clr-text); animation:fadeUp .75s ease both;
+  }
+  @keyframes fadeUp { 0%{opacity:0;transform:translateY(24px)} 100%{opacity:1;transform:translateY(0)} }
+
+  @media(max-width:500px){
+    .card{padding:1.6rem 1.1rem;}
+    .btn{padding:.62rem 1.2rem; min-width:105px;}
+    #chat-float{right:1rem; bottom:1.2rem; max-width:82vw;}
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══ S1 ═══ -->
+<div class="screen active" id="s1">
+  <div class="card">
+    <span class="deco">🌸</span>
+    <div class="dots">
+      <div class="dot active"></div>
+      <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+    </div>
+    <h1 class="title">Хотите ли вы пойти с Александром на свидание?</h1>
+    <div class="grp">
+      <button class="btn" onclick="goTo('s2')">Да 🌹</button>
+      <button class="btn" onclick="openPop()">Нет</button>
+    </div>
+  </div>
+</div>
+
+<!-- POPUP s1 -->
+<div class="pop-ov" id="popup">
+  <div class="pop-box">
+    <span style="font-size:2.2rem;display:block;margin-bottom:.9rem;">🌷</span>
+    <h2 class="title">Подтвердите, что вы хотите пойти с Александром на свидание</h2>
+    <p>Другого варианта нет 😊</p>
+    <button class="btn" onclick="closePop()">Подтвердить 💕</button>
+  </div>
+</div>
+
+<!-- ═══ S2 ═══ -->
+<div class="screen" id="s2">
+  <div class="card">
+    <span class="deco">🌿</span>
+    <div class="dots">
+      <div class="dot done"></div><div class="dot active"></div>
+      <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+    </div>
+    <h1 class="title">Где вы хотите провести время?</h1>
+    <div class="sub">Выберите, что вам ближе</div>
+    <div class="grp" style="flex-direction:column;">
+      <button class="btn btn-opt" onclick="goTo('s3a')">🌳 На улице</button>
+      <button class="btn btn-opt" onclick="goTo('s3b')">🏛️ В здании</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ S3a ═══ -->
+<div class="screen" id="s3a">
+  <div class="card">
+    <span class="deco">☀️</span>
+    <div class="dots">
+      <div class="dot done"></div><div class="dot done"></div>
+      <div class="dot active"></div><div class="dot"></div><div class="dot"></div>
+    </div>
+    <h1 class="title">Поехать в красивый парк или полюбоваться городом?</h1>
+    <div class="grp" style="flex-direction:column;">
+      <button class="btn btn-opt" onclick="goTo('s4')">🌺 Красивый парк</button>
+      <button class="btn btn-opt" onclick="goTo('s4')">🏙️ Полюбоваться городом</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ S3b ═══ -->
+<div class="screen" id="s3b">
+  <div class="card">
+    <span class="deco">✨</span>
+    <div class="dots">
+      <div class="dot done"></div><div class="dot done"></div>
+      <div class="dot active"></div><div class="dot"></div><div class="dot"></div>
+    </div>
+    <h1 class="title">Хотите пойти в кино или мило посидеть в кафе?</h1>
+    <div class="grp" style="flex-direction:column;">
+      <button class="btn btn-opt" onclick="goTo('s4')">🎬 Кино</button>
+      <button class="btn btn-opt" onclick="goTo('s4')">☕ Мило посидеть в кафе</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ S4 ═══ -->
+<div class="screen" id="s4">
+  <div class="card">
+    <span class="deco">💬</span>
+    <div class="dots">
+      <div class="dot done"></div><div class="dot done"></div>
+      <div class="dot done"></div><div class="dot active"></div><div class="dot"></div>
+    </div>
+    <h1 class="title">На какие темы вы хотите говорить?</h1>
+    <div class="grp" style="flex-direction:column;">
+      <button class="btn btn-opt" onclick="goTo('s5')">🌸 Рассказать о себе и что-то милое</button>
+      <button class="btn btn-opt" onclick="goTo('s4c')">🌿 Говорить о чём-то серьёзном и жизненном</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ S4c ═══ -->
+<div class="screen" id="s4c">
+  <div class="card">
+    <span class="deco">🤔</span>
+    <div class="dots">
+      <div class="dot done"></div><div class="dot done"></div>
+      <div class="dot done"></div><div class="dot active"></div><div class="dot"></div>
+    </div>
+    <h1 class="title">Точно ли такая милая девушка хочет говорить о чём-то серьёзном?</h1>
+    <div id="s4c-btns" class="grp">
+      <button class="btn" onclick="showEmoji('sad')">Да</button>
+      <button class="btn" onclick="showEmoji('happy')">Нет</button>
+    </div>
+    <div id="s4c-emoji" style="display:none; text-align:center;">
+      <span class="emoji-big" id="emoji-icon"></span>
+      <button class="btn" onclick="goTo('s5')" style="margin-top:.4rem;">Продолжить</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ S5 ═══ -->
+<div class="screen" id="s5">
+  <div class="card">
+    <span class="deco">👗</span>
+    <div class="dots">
+      <div class="dot done"></div><div class="dot done"></div>
+      <div class="dot done"></div><div class="dot done"></div>
+      <div class="dot active"></div>
+    </div>
+    <h1 class="title">Как бы вы хотели одеться?</h1>
+    <div class="grp" style="flex-direction:column;">
+      <button class="btn btn-opt" onclick="goToWithChat('s6')">👟 Удобно и практично</button>
+      <button class="btn btn-opt" onclick="goToWithChat('s6')">💄 Красиво и серьёзно</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ S6 — Время ═══ -->
+<div class="screen" id="s6">
+  <div class="card">
+    <span class="deco">⏰</span>
+    <div class="dots">
+      <div class="dot done"></div><div class="dot done"></div>
+      <div class="dot done"></div><div class="dot done"></div>
+      <div class="dot done"></div>
+    </div>
+    <h1 class="title">Выберите примерно время прогулки</h1>
+    <div class="grp" style="flex-direction:column;">
+      <button class="btn btn-opt" onclick="goTo('s_thanks')">🌅 Утро</button>
+      <button class="btn btn-opt" onclick="goTo('s_thanks')">☀️ День</button>
+      <button class="btn btn-opt" onclick="goTo('s_thanks')">🌇 Вечер</button>
+      <button class="btn btn-opt" onclick="goTo('s_thanks')">🌙 Ночь</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Thanks ═══ -->
+<div class="screen" id="s_thanks" style="align-items:center;justify-content:center;">
+  <div style="text-align:center;padding:3rem 1.5rem;">
+    <p class="thanks-txt">Спасибо за твои ответы 🌸</p>
+  </div>
+</div>
+
+<div class="dark-ov" id="dark"></div>
+
+<!-- ═══ Final ═══ -->
+<div class="screen" id="s_final">
+  <div class="final-wrap">
+    <div style="font-size:3rem;margin-bottom:1.1rem;animation:fadeUp .65s ease both;">💕</div>
+    <h1 class="final-title">Лишний раз решил показать,&nbsp;какая ты красивая</h1>
+    <div class="final-hearts">🌹 ✨ 🌸</div>
+  </div>
+</div>
+
+<!-- ═══ FLOATING CHAT (поверх всего на s6) ═══ -->
+<div id="chat-float">
+  <div class="chat-bubble">
+    <div class="chat-txt">Ты во всём выглядишь шикарно! ✨</div>
+    <div class="chat-nick">— Саша☺️</div>
+    <div class="chat-timer">
+      <div class="chat-timer-bar" id="timer-bar"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let cur = "s1";
+  let chatTimeout = null;
+
+  function goTo(nxt) {
+    const old = document.getElementById(cur);
+    old.classList.add("exit");
+    old.classList.remove("active");
+    setTimeout(() => {
+      old.classList.remove("exit");
+      const nxtEl = document.getElementById(nxt);
+      nxtEl.classList.add("active");
+      cur = nxt;
+      if (nxt === "s_thanks") setTimeout(runFinale, 1600);
+    }, 380);
+  }
+
+  // переход на s6 + одновременно всплывает чат
+  function goToWithChat(nxt) {
+    const old = document.getElementById(cur);
+    old.classList.add("exit");
+    old.classList.remove("active");
+    setTimeout(() => {
+      old.classList.remove("exit");
+      const nxtEl = document.getElementById(nxt);
+      nxtEl.classList.add("active");
+      cur = nxt;
+
+      // показать чат-балл
+      const cf = document.getElementById("chat-float");
+      cf.classList.remove("hide");
+      cf.classList.add("show");
+
+      // запустить таймер-бар
+      setTimeout(() => {
+        document.getElementById("timer-bar").classList.add("run");
+      }, 100);
+
+      // через 10 сек — убрать пузырь
+      clearTimeout(chatTimeout);
+      chatTimeout = setTimeout(() => {
+        cf.classList.remove("show");
+        cf.classList.add("hide");
+        // сброс бара для повторного использования
+        setTimeout(() => {
+          const bar = document.getElementById("timer-bar");
+          bar.classList.remove("run");
+          void bar.offsetWidth; // reflow
+        }, 600);
+      }, 10000);
+
+    }, 380);
+  }
+
+  function runFinale() {
+    const dark = document.getElementById("dark");
+    dark.classList.add("show");
+    setTimeout(() => {
+      dark.classList.remove("show");
+      setTimeout(() => goTo("s_final"), 380);
+    }, 1100);
+  }
+
+  function openPop() { document.getElementById("popup").classList.add("show"); }
+  function closePop() {
+    document.getElementById("popup").classList.remove("show");
+    setTimeout(() => goTo("s2"), 340);
+  }
+  document.getElementById("popup").addEventListener("click", function(e){
+    if (e.target === this) closePop();
+  });
+
+  function showEmoji(type) {
+    document.getElementById("s4c-btns").style.display = "none";
+    document.getElementById("emoji-icon").textContent = type === "sad" ? "😔" : "😊";
+    document.getElementById("s4c-emoji").style.display = "block";
+  }
+</script>
+</body>
+</html>
